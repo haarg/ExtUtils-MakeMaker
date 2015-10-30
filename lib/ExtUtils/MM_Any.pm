@@ -375,7 +375,13 @@ at build-time.
 
 sub stashmeta {
     my($self, $text, $file) = @_;
-    $self->echo($text, $file, { allow_variables => 0, append => 0 });
+    my $content = pack 'u', $text;
+    (my $encode_file = $file) =~ s/(\.[^.]+)?$/_enc$1/;
+    return (
+        $self->echo($content, $encode_file, { allow_variables => 0, append => 0 }),
+        '$(NOECHO)' . $self->oneliner('print unpack "u"', [qw(-0777 -n)]) . " $encode_file > $file",
+        '$(NOECHO) $(RM_F) '.$encode_file,
+    );
 }
 
 
