@@ -99,14 +99,6 @@ If Pod::Man is unavailable, this function will warn and return undef.
 sub pod2man {
     local @ARGV = @_ ? @_ : @ARGV;
 
-    {
-        local $@;
-        if( !eval { require Pod::Man } ) {
-            warn "Pod::Man is not available: $@".
-                 "Man pages will not be generated during this install.\n";
-            return 0;
-        }
-    }
     require Getopt::Long;
 
     # We will cheat and just use Getopt::Long.  We fool it by putting
@@ -119,39 +111,53 @@ sub pod2man {
                 'fixedbolditalic=s', 'official|o', 'quotes|q=s', 'lax|l',
                 'name|n=s', 'perm_rw=i', 'utf8|u'
     );
-    delete $options{utf8} unless $Pod::Man::VERSION >= 2.17;
 
     # If there's no files, don't bother going further.
     return 0 unless @ARGV;
 
-    # Official sets --center, but don't override things explicitly set.
-    if ($options{official} && !defined $options{center}) {
-        $options{center} = q[Perl Programmer's Reference Guide];
-    }
-
-    # This isn't a valid Pod::Man option and is only accepted for backwards
-    # compatibility.
-    delete $options{lax};
-    my $count = scalar @ARGV / 2;
-    my $plural = $count == 1 ? 'document' : 'documents';
-    print "Manifying $count pod $plural\n";
-
-    do {{  # so 'next' works
-        my ($pod, $man) = splice(@ARGV, 0, 2);
-
+    my @pods;
+    while (my ($pod, $man) = splice(@ARGV, 0, 2)) {
         next if ((-e $man) &&
                  (mtime($man) > mtime($pod)) &&
                  (mtime($man) > mtime("Makefile")));
-
-        my $parser = Pod::Man->new(%options);
-        $parser->parse_from_file($pod, $man)
-          or do { warn("Could not install $man\n");  next };
-
-        if (exists $options{perm_rw}) {
-            chmod(oct($options{perm_rw}), $man)
-              or do { warn("chmod $options{perm_rw} $man: $!\n"); next };
+        push @pods, [$pod, $man];
+    }
+    if (@pods) {
+        {
+            local $@;
+            if( !eval { require Pod::Man } ) {
+                warn "Pod::Man is not available: $@".
+                    "Man pages will not be generated during this install.\n";
+                return 0;
+            }
         }
-    }} while @ARGV;
+        # Official sets --center, but don't override things explicitly set.
+        if ($options{official} && !defined $options{center}) {
+            $options{center} = q[Perl Programmer's Reference Guide];
+        }
+
+        delete $options{utf8} unless $Pod::Man::VERSION >= 2.17;
+        # This isn't a valid Pod::Man option and is only accepted for backwards
+        # compatibility.
+        delete $options{lax};
+
+
+        my $count = @pods;
+        my $plural = $count == 1 ? 'document' : 'documents';
+        print "Manifying $count pod $plural\n";
+        my $parser = Pod::Man->new(%options);
+
+        for my $pod (@pods) {
+            my $man = $pod->[1];
+            $parser->parse_from_file(@$pod)
+              or do { warn("Could not install $man\n");  next };
+
+            if (exists $options{perm_rw}) {
+                chmod(oct($options{perm_rw}), $man)
+                  or do { warn("chmod $options{perm_rw} $man: $!\n"); next };
+            }
+        }
+    }
 
     return 1;
 }
