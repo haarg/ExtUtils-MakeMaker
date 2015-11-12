@@ -677,11 +677,14 @@ sub blibdirs_target {
     my @exists = map { $_.'$(DFSEP).exists' } @dirs;
 
     my $make = sprintf <<'MAKE', join(' ', @exists);
-blibdirs : %s
+blib$(DFSEP)dirs : %s
+	$(NOECHO) $(TOUCH) blib$(DFSEP)dirs
+
+blibdirs : blib$(DFSEP)dirs
 	$(NOECHO) $(NOOP)
 
 # Backwards compat with 6.18 through 6.25
-blibdirs.ts : blibdirs
+blibdirs.ts : blib$(DFSEP)dirs
 	$(NOECHO) $(NOOP)
 
 MAKE
@@ -1074,7 +1077,9 @@ sub manifypods_target {
     }
 
     my $manify = <<END;
-manifypods : pure_all config $dependencies
+manifypods : blib\$(DFSEP)manifypods
+
+blib\$(DFSEP)manifypods : \$(FIRST_MAKEFILE) blib\$(DFSEP)dirs $dependencies
 END
 
     my @man_cmds;
@@ -1088,6 +1093,7 @@ CMD
 
     $manify .= "\t\$(NOECHO) \$(NOOP)\n" unless @man_cmds;
     $manify .= join '', map { "$_\n" } @man_cmds;
+    $manify .= "\t\$(NOECHO) \$(TOUCH) blib\$(DFSEP)manifypods\n";
 
     return $manify;
 }
