@@ -11,6 +11,7 @@ use File::Basename qw(basename dirname);
 our %Config_Override;
 
 use ExtUtils::MakeMaker qw($Verbose neatvalue _sprintf562);
+use ExtUtils::ExtractVersion;
 
 # If we make $VERSION an our variable parse_version() breaks
 use vars qw($VERSION);
@@ -2869,58 +2870,15 @@ C<$VERSION> so the following will work.
 =cut
 
 sub parse_version {
-    my($self,$parsefile) = @_;
-    my $result;
-
-    local $/ = "\n";
-    local $_;
-    open(my $fh, '<', $parsefile) or die "Could not open '$parsefile': $!";
-    my $inpod = 0;
-    while (<$fh>) {
-        $inpod = /^=(?!cut)/ ? 1 : /^=cut/ ? 0 : $inpod;
-        next if $inpod || /^\s*#/;
-        chop;
-        next if /^\s*(if|unless|elsif)/;
-        if ( m{^ \s* package \s+ \w[\w\:\']* \s+ (v?[0-9._]+) \s* (;|\{)  }x ) {
-            local $^W = 0;
-            $result = $1;
-        }
-        elsif ( m{(?<!\\) ([\$*]) (([\w\:\']*) \bVERSION)\b .* (?<![<>=!])\=[^=]}x ) {
-			$result = $self->get_version($parsefile, $1, $2);
-        }
-        else {
-          next;
-        }
-        last if defined $result;
-    }
-    close $fh;
-
-    if ( defined $result && $result !~ /^v?[\d_\.]+$/ ) {
-      require version;
-      my $normal = eval { version->new( $result ) };
-      $result = $normal if defined $normal;
-    }
-    $result = "undef" unless defined $result;
-    return $result;
+    shift;
+    ExtUtils::ExtractVersion::extract_version(@_);
 }
 
+# this should go away, but keep it for backwards compatibility until we can
+# prove it isn't needed.
 sub get_version {
-    my ($self, $parsefile, $sigil, $name) = @_;
-    my $line = $_; # from the while() loop in parse_version
-    {
-        package ExtUtils::MakeMaker::_version;
-        undef *version; # in case of unexpected version() sub
-        eval {
-            require version;
-            version::->import;
-        };
-        no strict;
-        local *{$name};
-        local $^W = 0;
-        $line = $1 if $line =~ m{^(.+)}s;
-        eval($line); ## no critic
-        return ${$name};
-    }
+    shift;
+    ExtUtils::ExtractVersion::_get_version(@_);
 }
 
 =item pasthru (o)
