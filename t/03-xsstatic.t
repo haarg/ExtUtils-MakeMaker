@@ -5,16 +5,16 @@ use warnings;
 use Config;
 
 my $release;
-
 BEGIN {
     $release = ( -d '.git' ? 1 : 0 );
-    chdir 't' or die "chdir(t): $!\n";
-    unshift @INC, 'lib/';
 }
 
+use lib 't/lib';
 use MakeMaker::Test::Utils;
 use MakeMaker::Test::Setup::XS;
 use Test::More;
+
+chdir 't' or die "chdir(t): $!\n";
 
 plan skip_all => "ExtUtils::CBuilder not installed or couldn't find a compiler"
   unless have_compiler();
