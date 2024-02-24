@@ -1238,7 +1238,7 @@ sub _fix_metadata_before_conversion {
     }
 
     my $now_license = $meta->as_struct({ version => 2 })->{license};
-    if ($self->{LICENSE} and $self->{LICENSE} ne 'unknown' and
+    if ($self->{LICENSE} and $self->{LICENSE}[0] and $self->{LICENSE}[0] ne 'unknown' and
         @{$now_license} == 1 and $now_license->[0] eq 'unknown'
     ) {
         warn "Invalid LICENSE value '$self->{LICENSE}' ignored\n";
@@ -1311,7 +1311,7 @@ sub metafile_data {
         author       => defined($self->{AUTHOR}) ? $self->{AUTHOR} : ['unknown'],
         dynamic_config => 1,
         generated_by => "ExtUtils::MakeMaker version $ExtUtils::MakeMaker::VERSION",
-        license      => [ $self->{LICENSE} || 'unknown' ],
+        license      => defined($self->{LICENSE}) ? $self->{LICENSE} : [ 'unknown' ],
         'meta-spec'  => {
             url         => $METASPEC_URL,
             version     => $METASPEC_V,

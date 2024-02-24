@@ -35,9 +35,10 @@ sub mymeta_ok {
 }
 
 my $new_mm = sub {
-    my %args = @_;
-    $args{DISTVNAME} ||= "$args{DISTNAME}-$args{VERSION}.tar.gz";
-    return bless { ARGS => \%args, %args }, 'ExtUtils::MM_Any';
+    my $args = {@_};
+    ExtUtils::MakeMaker::_convert_compat_attrs($args);
+    $args->{DISTVNAME} ||= "$args->{DISTNAME}-$args->{VERSION}.tar.gz";
+    return bless { ARGS => $args, %$args }, 'ExtUtils::MM_Any';
 };
 my @METASPEC14 = (
     'meta-spec'  => {

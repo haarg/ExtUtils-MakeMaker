@@ -91,7 +91,9 @@ sub ExtUtils::MM_Any::quote_literal { $_[1] }
 
 sub run_test {
     my ($mmargs, $expected, $label, $metadata_re) = @_;
-    my $mm = bless { ARGS => {@$mmargs}, @$mmargs }, 'ExtUtils::MM_Any';
+    my $args = { @$mmargs };
+    ExtUtils::MakeMaker::_convert_compat_attrs($args);
+    my $mm = bless { ARGS => $args, %$args }, 'ExtUtils::MM_Any';
     my @warnings;
     my $ret;
     {

@@ -101,6 +101,7 @@ my %Special_Sigs = (
  IMPORTS            => 'HASH',
  INCLUDE_EXT        => 'ARRAY',
  LIBS               => ['ARRAY',''],
+ LICENSE            => 'ARRAY',
  MAN1PODS           => 'HASH',
  MAN3PODS           => 'HASH',
  META_ADD           => 'HASH',
@@ -146,6 +147,16 @@ sub _convert_compat_attrs { #result of running several times should be same
             }
         } else {
                 $att->{AUTHOR} = [];
+        }
+    }
+    if (exists $att->{LICENSE}) {
+        if (my $t = $att->{LICENSE}) {
+            if (!ref($t)) {
+                $att->{LICENSE} = [$t];
+            }
+        }
+        else {
+            $att->{LICENSE} = [];
         }
     }
 }
@@ -2219,8 +2230,8 @@ MakeMaker will turn it into an array with one element.
 
 Available in version 6.31 and above.
 
-The licensing terms of your distribution.  Generally it's "perl_5" for the
-same license as Perl itself.
+The licensing terms of your distribution.  An array reference of licenses.
+Generally it's C<[ "perl_5" ]> for the same license as Perl itself.
 
 See L<CPAN::Meta::Spec> for the list of options.
 
